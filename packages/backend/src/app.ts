@@ -16,8 +16,22 @@ import {
 } from "./schemas.js";
 import { AppStore } from "./store.js";
 
+function getSessionIdFromCookie(cookieHeader?: string) {
+  if (!cookieHeader) {
+    return undefined;
+  }
+
+  const match = cookieHeader.match(/gcodeline_session=([^;]+)/);
+  return match?.[1];
+}
+
+function getRequestSessionId(req: express.Request) {
+  return req.header("x-gcodeline-session") ?? getSessionIdFromCookie(req.header("cookie"));
+}
+
 export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }) {
   const appConfig = getAppConfig();
+  const oauthCallbackUrl = `${appConfig.webBaseUrl}/api/auth/github/callback`;
   const store = deps?.store ?? new AppStore(createDatabase());
   await store.seed();
   const eventBus = deps?.eventBus ?? new EventBus(store);
@@ -37,7 +51,8 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
 
   app.get("/api/me", async (_req, res, next) => {
     try {
-      const user = await store.getCurrentUser();
+      const sessionId = getRequestSessionId(_req);
+      const user = await store.getCurrentUser(sessionId);
       res.json({
         user,
         permissions: ["projects:read", "tasks:write", "assets:write", "builds:write"],
@@ -65,14 +80,14 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
 
       const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
       authorizeUrl.searchParams.set("client_id", appConfig.githubClientId);
-      authorizeUrl.searchParams.set("redirect_uri", `${appConfig.appBaseUrl}/api/auth/github/callback`);
+      authorizeUrl.searchParams.set("redirect_uri", oauthCallbackUrl);
       authorizeUrl.searchParams.set("scope", "repo read:user user:email");
       authorizeUrl.searchParams.set("state", state);
       if (query.installationHint) {
         authorizeUrl.searchParams.set("login", query.installationHint);
       }
 
-      return res.json({ authorizeUrl: authorizeUrl.toString() });
+      return res.redirect(302, authorizeUrl.toString());
     } catch (error) {
       next(error);
     }
@@ -102,7 +117,7 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
           client_id: appConfig.githubClientId,
           client_secret: appConfig.githubClientSecret,
           code,
-          redirect_uri: `${appConfig.appBaseUrl}/api/auth/github/callback`
+          redirect_uri: oauthCallbackUrl
         })
       });
       const tokenPayload = await tokenResponse.json() as {
@@ -122,7 +137,26 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
           "user-agent": "GCodeLine"
         }
       });
-      const me = await meResponse.json() as { login?: string };
+      const me = await meResponse.json() as {
+        login?: string;
+        name?: string;
+        email?: string;
+        avatar_url?: string;
+      };
+
+      let email = me.email;
+      if (!email) {
+        const emailsResponse = await fetch("https://api.github.com/user/emails", {
+          headers: {
+            authorization: `Bearer ${tokenPayload.access_token}`,
+            "user-agent": "GCodeLine"
+          }
+        });
+        if (emailsResponse.ok) {
+          const emails = await emailsResponse.json() as Array<{ email: string; primary: boolean; verified: boolean }>;
+          email = emails.find((entry) => entry.primary)?.email ?? emails[0]?.email;
+        }
+      }
 
       await store.saveIntegrationToken({
         provider: "github",
@@ -132,9 +166,25 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
         accountLogin: me.login
       });
 
+      const user = await store.upsertGitHubUser({
+        login: me.login ?? "github-user",
+        name: me.name,
+        email,
+        avatarUrl: me.avatar_url
+      });
+      const sessionId = await store.createSession(user.id);
+
+      res.cookie("gcodeline_session", sessionId, {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: false,
+        path: "/"
+      });
+
       const redirectUrl = new URL(persistedState.redirectTo ?? `${appConfig.webBaseUrl}/`);
       redirectUrl.searchParams.set("github", "connected");
       redirectUrl.searchParams.set("account", me.login ?? "github");
+      redirectUrl.searchParams.set("session", sessionId);
       return res.redirect(302, redirectUrl.toString());
     } catch (error) {
       next(error);
@@ -225,7 +275,7 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
       const state = await store.createOAuthState(input.redirectTo);
       const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
       authorizeUrl.searchParams.set("client_id", appConfig.githubClientId || "missing-client-id");
-      authorizeUrl.searchParams.set("redirect_uri", `${appConfig.appBaseUrl}/api/auth/github/callback`);
+      authorizeUrl.searchParams.set("redirect_uri", oauthCallbackUrl);
       authorizeUrl.searchParams.set("scope", "repo read:user user:email");
       authorizeUrl.searchParams.set("state", state);
       if (input.installationHint) {
@@ -379,7 +429,7 @@ export async function createApp(deps?: { store?: AppStore; eventBus?: EventBus }
 
   app.get("/api/notifications", async (_req, res, next) => {
     try {
-      const user = await store.getCurrentUser();
+      const user = await store.getCurrentUser(getRequestSessionId(_req));
       res.json({
         notifications: await store.listNotifications(user.id)
       });

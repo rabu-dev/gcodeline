@@ -93,7 +93,23 @@ export class AppStore {
     });
   }
 
-  async getCurrentUser(): Promise<User> {
+  async getCurrentUser(sessionId?: string): Promise<User> {
+    if (sessionId) {
+      const session = await this.db.session.findUnique({
+        where: { id: sessionId },
+        include: { user: true }
+      });
+      if (session) {
+        return {
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          avatar: session.user.avatar ?? undefined,
+          roles: parseJson<User["roles"]>(session.user.roles, [])
+        };
+      }
+    }
+
     const row = await this.db.user.findFirstOrThrow({ orderBy: { name: "asc" } });
     return {
       id: row.id,
@@ -102,6 +118,45 @@ export class AppStore {
       avatar: row.avatar ?? undefined,
       roles: parseJson<User["roles"]>(row.roles, [])
     };
+  }
+
+  async upsertGitHubUser(input: { login: string; name?: string; email?: string; avatarUrl?: string }) {
+    const id = `github:${input.login}`;
+    const user = await this.db.user.upsert({
+      where: { id },
+      update: {
+        name: input.name || input.login,
+        email: input.email || `${input.login}@users.noreply.github.com`,
+        avatar: input.avatarUrl,
+        roles: serialize(["Owner"])
+      },
+      create: {
+        id,
+        name: input.name || input.login,
+        email: input.email || `${input.login}@users.noreply.github.com`,
+        avatar: input.avatarUrl,
+        roles: serialize(["Owner"])
+      }
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar ?? undefined,
+      roles: parseJson<User["roles"]>(user.roles, [])
+    } satisfies User;
+  }
+
+  async createSession(userId: string) {
+    const session = await this.db.session.create({
+      data: {
+        id: randomUUID(),
+        userId,
+        createdAt: now()
+      }
+    });
+    return session.id;
   }
 
   async getProjects() {

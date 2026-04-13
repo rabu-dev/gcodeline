@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run prisma:push",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
+    "prisma:push": "prisma db push --skip-generate",
     "start": "node dist/server.js",
     "test": "node --test --import tsx tests/*.test.ts"
   },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getGitHubAuthUrl, getMe, getNotifications, getProject, getProjects, getTask } from "./api";
+import { getMe, getNotifications, getProject, getProjects, getTask, persistSessionFromUrl } from "./api";
 import type { Project, TaskDetails } from "./types";
 
 type Session = {
@@ -20,6 +20,7 @@ export default function App() {
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; createdAt: string }>>([]);
 
   useEffect(() => {
+    persistSessionFromUrl();
     void (async () => {
       const me = await getMe();
       const allProjects = await getProjects();
@@ -68,22 +69,12 @@ export default function App() {
           </p>
         </div>
 
-        <button
+        <a
           className="github-button"
-          type="button"
-          onClick={() => {
-            void (async () => {
-              const auth = await getGitHubAuthUrl();
-              if (auth.oauthConfigured) {
-                window.location.href = auth.authorizeUrl;
-              } else {
-                window.alert("Configura GITHUB_CLIENT_ID y GITHUB_CLIENT_SECRET en el backend para activar OAuth real.");
-              }
-            })();
-          }}
+          href={`/api/auth/github/connect?redirectTo=${encodeURIComponent(window.location.origin)}`}
         >
           Continue with GitHub
-        </button>
+        </a>
 
         {session ? (
           <div className="profile-card">

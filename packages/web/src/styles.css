@@ -91,6 +91,7 @@ h3 {
 }
 
 .github-button {
+  display: block;
   width: 100%;
   margin: 28px 0;
   padding: 14px 18px;
@@ -100,6 +101,8 @@ h3 {
   color: #101420;
   font-weight: 700;
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
 
 .profile-card {

@@ -27,7 +27,7 @@ export class EventBus {
   }
 
   private async processNext() {
-    const job = this.store.reserveNextEvent();
+    const job = await this.store.reserveNextEvent();
     if (!job) {
       return;
     }
@@ -35,13 +35,13 @@ export class EventBus {
     try {
       if (job.eventName === "build.requested") {
         const buildId = String(job.payload.buildId);
-        this.store.updateBuildStatus(buildId, "running");
+        await this.store.updateBuildStatus(buildId, "running");
         await new Promise((resolve) => setTimeout(resolve, 150));
-        this.store.updateBuildStatus(buildId, "passed");
+        await this.store.updateBuildStatus(buildId, "passed");
       }
 
       if (job.eventName === "notification.emit") {
-        this.store.createNotification(
+        await this.store.createNotification(
           String(job.payload.userId),
           String(job.payload.kind),
           String(job.payload.title),
@@ -49,9 +49,9 @@ export class EventBus {
         );
       }
 
-      this.store.completeEvent(job.id);
+      await this.store.completeEvent(job.id);
     } catch {
-      this.store.failEvent(job.id);
+      await this.store.failEvent(job.id);
     }
   }
 }

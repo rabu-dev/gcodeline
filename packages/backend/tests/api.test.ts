@@ -3,16 +3,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
-import { rmSync } from "node:fs";
-import { join } from "node:path";
 import { createApp } from "../src/app.js";
 
 async function startTestServer() {
-  const dbPath = join(process.cwd(), "data", `test-${Date.now()}-${Math.random().toString(16).slice(2)}.db`);
-  process.env.DATABASE_PATH = dbPath;
   process.env.GITHUB_WEBHOOK_SECRET = "dev-secret";
 
-  const { app, eventBus, store } = createApp();
+  const { app, eventBus, store } = await createApp();
   eventBus.start();
 
   const server = createServer(app);
@@ -26,10 +22,9 @@ async function startTestServer() {
   return {
     server,
     baseUrl: `http://127.0.0.1:${address.port}`,
-    cleanup: () => {
+    cleanup: async () => {
       eventBus.stop();
-      store.db.close();
-      rmSync(dbPath, { force: true });
+      await store.disconnect();
     }
   };
 }
@@ -126,6 +121,6 @@ test("create task, ingest asset and link commit through webhook", async () => {
     assert.ok(taskJson.timeline.some((entry) => entry.type === "commit"));
   } finally {
     server.close();
-    cleanup();
+    await cleanup();
   }
 });

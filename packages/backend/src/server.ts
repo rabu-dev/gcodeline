@@ -1,16 +1,23 @@
 import { createApp } from "./app.js";
 import { getAppConfig } from "./config.js";
 
-const { app, eventBus } = createApp();
-const appConfig = getAppConfig();
+async function main() {
+  const { app, eventBus, store } = await createApp();
+  const appConfig = getAppConfig();
 
-eventBus.start();
+  eventBus.start();
 
-const server = app.listen(appConfig.port, () => {
-  console.log(`GCodeLine backend listening on http://localhost:${appConfig.port}`);
-});
+  const server = app.listen(appConfig.port, () => {
+    console.log(`GCodeLine backend listening on http://localhost:${appConfig.port}`);
+  });
 
-process.on("SIGINT", () => {
-  eventBus.stop();
-  server.close(() => process.exit(0));
-});
+  process.on("SIGINT", async () => {
+    eventBus.stop();
+    server.close(async () => {
+      await store.disconnect();
+      process.exit(0);
+    });
+  });
+}
+
+void main();
