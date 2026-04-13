@@ -1,0 +1,219 @@
+:root {
+  color-scheme: light;
+  font-family: "IBM Plex Sans", sans-serif;
+  color: #f8f5ef;
+  background:
+    radial-gradient(circle at top left, rgba(242, 122, 44, 0.28), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(20, 102, 165, 0.32), transparent 24%),
+    linear-gradient(135deg, #14121c 0%, #1c2433 42%, #0d1017 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 32px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 10, 17, 0.62);
+  backdrop-filter: blur(18px);
+}
+
+.workspace {
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+
+.board-card,
+.detail-card,
+.profile-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+.board-card,
+.detail-card {
+  padding: 24px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-grid .detail-card:last-child {
+  grid-column: 1 / -1;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f7b267;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Space Grotesk", sans-serif;
+  margin: 0;
+}
+
+.lede {
+  color: rgba(248, 245, 239, 0.72);
+  line-height: 1.6;
+}
+
+.github-button {
+  width: 100%;
+  margin: 28px 0;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7b54 0%, #ffb26b 100%);
+  color: #101420;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-card {
+  padding: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.notification-card {
+  margin-top: 24px;
+}
+
+.notification-item {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 4px;
+}
+
+.picker {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.picker select {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 12, 18, 0.85);
+  color: #fff;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.task-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.task-pill {
+  min-width: 220px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 12, 18, 0.55);
+  color: inherit;
+  text-align: left;
+  display: grid;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.task-pill.active {
+  border-color: rgba(255, 178, 107, 0.75);
+  transform: translateY(-2px);
+}
+
+.chip-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.9rem;
+}
+
+.trace-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.trace-item,
+.timeline-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(10, 12, 18, 0.48);
+  display: grid;
+  gap: 6px;
+}
+
+.timeline {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.trace-item span,
+.timeline-item span {
+  color: rgba(248, 245, 239, 0.66);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid,
+  .trace-columns {
+    grid-template-columns: 1fr;
+  }
+}

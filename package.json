@@ -1,0 +1,19 @@
+{
+  "name": "gcodeline",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/backend",
+    "packages/web",
+    "packages/unreal-plugin"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @gcodeline/backend\" \"npm run dev --workspace @gcodeline/web\"",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

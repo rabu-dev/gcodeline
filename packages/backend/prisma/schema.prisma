@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id
+  name          String
+  email         String
+  avatar        String?
+  roles         String
+  notifications Notification[]
+}
+
+model Team {
+  id      String @id
+  name    String
+  members String
+}
+
+model Project {
+  id           String @id
+  teamId       String
+  name         String
+  repoMappings String
+  tasks        Task[]
+  assets       Asset[]
+}
+
+model Task {
+  id            String          @id
+  projectId     String
+  title         String
+  description   String
+  status        String
+  priority      String
+  assignees     String
+  linkedCommits String
+  linkedAssets  String
+  linkedPRs     String
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  timeline      TimelineEvent[]
+}
+
+model Commit {
+  hash         String @id
+  message      String
+  author       String
+  date         String
+  filesChanged String
+}
+
+model PullRequest {
+  id            String @id
+  number        Int
+  title         String
+  status        String
+  repo          String
+  linkedTaskIds String
+}
+
+model Asset {
+  id           String         @id
+  projectId    String
+  taskId       String?
+  unrealGuid   String         @unique
+  path         String
+  hash         String
+  size         Int
+  dependencies String
+  snapshotUrl  String?
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions     AssetVersion[]
+}
+
+model AssetVersion {
+  id        String @id
+  assetId   String
+  hash      String
+  changedAt String
+  asset     Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model Build {
+  id          String @id
+  taskId      String?
+  prId        String?
+  status      String
+  trigger     String
+  logsUrl     String?
+  artifactUrl String?
+  startedAt   String
+  finishedAt  String?
+}
+
+model TimelineEvent {
+  id        String @id
+  taskId    String
+  type      String
+  title     String
+  createdAt String
+  meta      String?
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String @id
+  userId    String
+  kind      String
+  title     String
+  body      String
+  readAt    String?
+  createdAt String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UnrealToken {
+  token         String @id
+  projectId     String
+  pluginVersion String
+  machineName   String
+  createdAt     String
+}
+
+model OAuthState {
+  state      String @id
+  redirectTo String?
+  createdAt  String
+}
+
+model IntegrationToken {
+  id           String @id
+  provider     String
+  accessToken  String
+  refreshToken String?
+  scope        String?
+  accountLogin String?
+  createdAt    String
+}
+
+model EventQueue {
+  id          String @id
+  eventName   String
+  payload     String
+  status      String
+  createdAt   String
+  availableAt String
+  processedAt String?
+}

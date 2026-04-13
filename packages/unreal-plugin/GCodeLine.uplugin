@@ -1,0 +1,18 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "GCodeLine",
+  "Description": "Sync tasks, GitHub traceability and Unreal asset metadata with GCodeLine.",
+  "Category": "Pipeline",
+  "CreatedBy": "GCodeLine",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Modules": [
+    {
+      "Name": "GCodeLine",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
+  ]
+}
